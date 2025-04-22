@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 )
 
 type Auth struct {
@@ -16,6 +17,7 @@ type Auth struct {
 type User struct {
 	Username string
 	Email    string
+	UserAuth *Auth
 }
 
 type UserCreateRequest struct {
@@ -64,7 +66,7 @@ func register(w http.ResponseWriter, r *http.Request) {
 }
 func login(w http.ResponseWriter, r *http.Request) {
 
-	var err error
+	// var err error
 	var httpErr int
 	var req LoginRequest
 
@@ -81,17 +83,87 @@ func login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var user *User // get from db
+	if !CheckPassword([]byte(user.UserAuth.PasswordHash), req.Password) {
+		var httpErr = http.StatusBadRequest
+		http.Error(w, "Invalid Username/Password", httpErr)
+		return
+	}
+
+	sessionToken := generateToken(32)
+	csrfToken := generateToken(32)
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "session_token",
+		Value:    sessionToken,
+		Expires:  time.Now().Add(time.Duration(time.Hour * 24)),
+		HttpOnly: true,
+	})
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "csrf_token",
+		Value:    csrfToken,
+		Expires:  time.Now().Add(time.Duration(time.Hour * 24)),
+		HttpOnly: false,
+	})
+
+	//Save this session and token to user Auth
+	fmt.Fprint(w, "Login Success!")
+}
+
+func logout(w http.ResponseWriter, r *http.Request) {
+
+	var httpErr int
+
+	if err := Authorize(r); err != nil {
+		httpErr = http.StatusUnauthorized
+		http.Error(w, "Invalid request", httpErr)
+		return
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "session_token",
+		Value:    "",
+		Expires:  time.Now().Add(-time.Hour),
+		HttpOnly: true,
+	})
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "csrf_token",
+		Value:    "",
+		Expires:  time.Now().Add(-time.Hour),
+		HttpOnly: true,
+	})
+
+	// clear auth data from user record
+	fmt.Fprint(w, "Log out successful")
 
 }
-func logout(w http.ResponseWriter, r *http.Request)    {}
-func protected(w http.ResponseWriter, r *http.Request) {}
+
+func createMeeting(w http.ResponseWriter, r *http.Request) {
+
+	var httpErr int
+
+	if r.Method != http.MethodPost {
+		httpErr = http.StatusMethodNotAllowed
+		http.Error(w, "Invalid Method", httpErr)
+		return
+	}
+
+	if err := Authorize(r); err != nil {
+		httpErr = http.StatusUnauthorized
+		http.Error(w, "Invalid request", httpErr)
+		return
+	}
+
+	fmt.Fprint(w, "Create meeting success")
+}
 
 func main() {
 
 	http.HandleFunc("/register", register)
 	http.HandleFunc("/login", register)
 	http.HandleFunc("/logout", register)
-	http.HandleFunc("/protected", register)
+	http.HandleFunc("/create-meeting", register)
 
 	log.Println("Server Listening at :8080")
 
