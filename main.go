@@ -3,20 +3,21 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/SarkiMudboy/meeet/database"
 	"log"
 	"net/http"
 	"time"
 )
 
 type Auth struct {
+	AuthId       int16
 	Session      string
 	PasswordHash string
 	CSRFToken    string
 }
 
 type User struct {
-	Username string
-	Email    string
+	User     *database.User
 	UserAuth *Auth
 }
 
@@ -49,7 +50,12 @@ func register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//check if username exists here
+	//check if user exists here
+	if exists := checkUserExists(req.Email); exists {
+		httpErr = http.StatusBadRequest
+		http.Error(w, "A user with that email already exists", httpErr)
+		return
+	}
 
 	password, err := HashPassword(req.Password)
 	if err != nil {
@@ -58,9 +64,10 @@ func register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_ = Auth{PasswordHash: password}
-	//persist to user
+	auth := Auth{PasswordHash: password}
 
+	//persist to user
+	createUser(req, auth)
 	fmt.Fprint(w, "Success! New User!")
 
 }
@@ -82,7 +89,14 @@ func login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var user *User // get from db
+	user, err := getUser(req.Email)
+	if err != nil {
+		log.Println(err)
+		httpErr = http.StatusBadRequest
+		http.Error(w, "Invalid login credentials", httpErr)
+		return
+	}
+
 	if !CheckPassword([]byte(user.UserAuth.PasswordHash), req.Password) {
 		var httpErr = http.StatusBadRequest
 		http.Error(w, "Invalid Username/Password", httpErr)
@@ -107,6 +121,17 @@ func login(w http.ResponseWriter, r *http.Request) {
 	})
 
 	//Save this session and token to user Auth
+	auth, err := getAuth(req.Email)
+	if err != nil {
+		httpErr := http.StatusInternalServerError
+		http.Error(w, "An error occured", httpErr)
+		return
+	}
+
+	auth.Session = sessionToken
+	auth.CSRFToken = csrfToken
+	updateAuth(auth)
+
 	fmt.Fprint(w, "Login Success!")
 }
 
@@ -161,9 +186,9 @@ func createMeeting(w http.ResponseWriter, r *http.Request) {
 func main() {
 
 	http.HandleFunc("/register", register)
-	http.HandleFunc("/login", register)
-	http.HandleFunc("/logout", register)
-	http.HandleFunc("/create-meeting", register)
+	http.HandleFunc("/login", login)
+	http.HandleFunc("/logout", logout)
+	http.HandleFunc("/create-meeting", createMeeting)
 
 	log.Println("Server Listening at :8080")
 

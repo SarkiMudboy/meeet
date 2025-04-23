@@ -8,7 +8,7 @@ import (
 	"os"
 	"time"
 
-	// "github.com/SarkiMudboy/shuttle/database"
+	"github.com/SarkiMudboy/meeet/database"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/mysql"
@@ -48,4 +48,103 @@ func runMigrations() {
 	}
 
 	log.Println("Migration Sucessful")
+}
+
+func checkUserExists(email string) bool {
+	ctx := context.Background()
+	queries := database.New(db)
+
+	r, err := queries.CheckUserExists(ctx, email)
+	if err != nil {
+		log.Printf("An error occured: %s", err.Error())
+		return false
+	}
+	return r
+}
+
+func createUser(request UserCreateRequest, auth Auth) error {
+
+	ctx := context.Background()
+	queries := database.New(db)
+
+	params := database.CreateUserParams{
+		Email:    request.Email,
+		Password: auth.PasswordHash,
+	}
+
+	_, err := queries.CreateUser(ctx, params)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func getUser(email string) (User, error) {
+	ctx := context.Background()
+	queries := database.New(db)
+
+	u := User{}
+	user, err := queries.GetUserAuth(ctx, email)
+
+	if err != nil {
+		return u, err
+	}
+
+	u.User = &database.User{
+		UserID: user.UserID,
+		Email:  user.Email,
+	}
+	u.UserAuth = &Auth{
+		PasswordHash: user.PasswordHash.String,
+		CSRFToken:    user.CsrfToken.String,
+		Session:      user.SessionToken.String,
+	}
+
+	return u, nil
+}
+
+func getAuth(email string) (Auth, error) {
+	ctx := context.Background()
+	queries := database.New(db)
+
+	a := Auth{}
+
+	auth, err := queries.GetAuth(ctx, email)
+	if err != nil {
+		return a, err
+	}
+
+	a.AuthId = auth.AuthID.Int16
+	a.PasswordHash = auth.PasswordHash.String
+	a.CSRFToken = auth.CsrfToken.String
+	a.Session = auth.SessionToken.String
+
+	return a, nil
+}
+
+func updateAuth(auth Auth) error {
+
+	ctx := context.Background()
+	queries := database.New(db)
+
+	authParams := database.UpdateUserAuthParams{
+		SessionToken: sql.NullString{
+			String: auth.Session,
+			Valid:  true,
+		},
+		CsrfToken: sql.NullString{
+			String: auth.CSRFToken,
+			Valid:  true,
+		},
+		PasswordHash: sql.NullString{
+			String: auth.PasswordHash,
+			Valid:  true,
+		},
+	}
+
+	_, err := queries.UpdateUserAuth(ctx, authParams)
+	if err != nil {
+		return err
+	}
+	return nil
 }

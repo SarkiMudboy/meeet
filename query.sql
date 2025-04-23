@@ -1,12 +1,18 @@
 -- name: getUser :one
-SELECT user_id, email, password FROM user
-WHERE id = ? LIMIT 1;
+SELECT user_id, email, password FROM users
+WHERE user_id = ? LIMIT 1;
+
+
+-- name: CheckUserExists :one
+SELECT EXISTS(
+  SELECT 1 FROM users WHERE email = ?
+);
 
 -- name: getUserAuth :one
 SELECT u.user_id, u.email, u.password, a.password_hash, a.session_token, a.csrf_token
 FROM users u INNER JOIN auth a 
 ON u.user_id = a.user_id
-WHERE u.user_id = ? LIMIT 1;
+WHERE u.email = ? LIMIT 1;
 
 -- name: CreateUser :execresult
 INSERT INTO users (
@@ -14,6 +20,14 @@ INSERT INTO users (
 ) VALUES (
   ?, ?
 );
+
+
+-- name: GetAuth :one
+SELECT a.auth_id, a.password_hash, a.session_token, a.csrf_token
+FROM auth a INNER JOIN users u
+ON a.user_id = u.user_id
+WHERE u.email = ?;
+
 
 -- name: UpdateUser :execresult
 UPDATE users 

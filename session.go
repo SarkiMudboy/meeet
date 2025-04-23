@@ -8,7 +8,9 @@ import (
 var ErrUnauthuorized = errors.New("Unauthorized")
 
 func Authorize(r *http.Request) error {
+
 	// get the user from db
+	// user, err := getUser(req.Email)
 
 	var user *User
 	session, err := r.Cookie("session_cookie")
