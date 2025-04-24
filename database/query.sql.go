@@ -23,6 +23,21 @@ func (q *Queries) CheckUserExists(ctx context.Context, email string) (bool, erro
 	return exists, err
 }
 
+const createAuth = `-- name: CreateAuth :execresult
+INSERT INTO auth (
+ user_id, password_hash 
+) VALUES ( ?, ? )
+`
+
+type CreateAuthParams struct {
+	UserID       uint16
+	PasswordHash sql.NullString
+}
+
+func (q *Queries) CreateAuth(ctx context.Context, arg CreateAuthParams) (sql.Result, error) {
+	return q.db.ExecContext(ctx, createAuth, arg.UserID, arg.PasswordHash)
+}
+
 const createUser = `-- name: CreateUser :execresult
 INSERT INTO users (
   email, password
@@ -91,6 +106,36 @@ func (q *Queries) GetAuth(ctx context.Context, email string) (GetAuthRow, error)
 	return i, err
 }
 
+const retrieveAuth = `-- name: RetrieveAuth :one
+SELECT a.auth_id, a.password_hash, a.session_token, a.csrf_token
+FROM auth a
+WHERE a.csrf_token = ? AND a.session_token = ?
+`
+
+type RetrieveAuthParams struct {
+	CsrfToken    sql.NullString
+	SessionToken sql.NullString
+}
+
+type RetrieveAuthRow struct {
+	AuthID       sql.NullInt16
+	PasswordHash sql.NullString
+	SessionToken sql.NullString
+	CsrfToken    sql.NullString
+}
+
+func (q *Queries) RetrieveAuth(ctx context.Context, arg RetrieveAuthParams) (RetrieveAuthRow, error) {
+	row := q.db.QueryRowContext(ctx, retrieveAuth, arg.CsrfToken, arg.SessionToken)
+	var i RetrieveAuthRow
+	err := row.Scan(
+		&i.AuthID,
+		&i.PasswordHash,
+		&i.SessionToken,
+		&i.CsrfToken,
+	)
+	return i, err
+}
+
 const updateUser = `-- name: UpdateUser :execresult
 UPDATE users 
 SET email = ?, password = ?
@@ -110,7 +155,7 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (sql.Res
 const updateUserAuth = `-- name: UpdateUserAuth :execresult
 UPDATE auth 
 SET session_token= ?, password_hash = ?, csrf_token = ?
-WHERE auth_id = ? OR user_id = ?
+WHERE auth_id = ?
 `
 
 type UpdateUserAuthParams struct {
@@ -118,7 +163,6 @@ type UpdateUserAuthParams struct {
 	PasswordHash sql.NullString
 	CsrfToken    sql.NullString
 	AuthID       sql.NullInt16
-	UserID       uint16
 }
 
 func (q *Queries) UpdateUserAuth(ctx context.Context, arg UpdateUserAuthParams) (sql.Result, error) {
@@ -127,7 +171,6 @@ func (q *Queries) UpdateUserAuth(ctx context.Context, arg UpdateUserAuthParams) 
 		arg.PasswordHash,
 		arg.CsrfToken,
 		arg.AuthID,
-		arg.UserID,
 	)
 }
 

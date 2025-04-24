@@ -21,6 +21,10 @@ INSERT INTO users (
   ?, ?
 );
 
+-- name: CreateAuth :execresult
+INSERT INTO auth (
+ user_id, password_hash 
+) VALUES ( ?, ? );
 
 -- name: GetAuth :one
 SELECT a.auth_id, a.password_hash, a.session_token, a.csrf_token
@@ -28,6 +32,10 @@ FROM auth a INNER JOIN users u
 ON a.user_id = u.user_id
 WHERE u.email = ?;
 
+-- name: RetrieveAuth :one
+SELECT a.auth_id, a.password_hash, a.session_token, a.csrf_token
+FROM auth a
+WHERE a.csrf_token = ? AND a.session_token = ?;
 
 -- name: UpdateUser :execresult
 UPDATE users 
@@ -37,7 +45,7 @@ WHERE user_id = ?;
 -- name: UpdateUserAuth :execresult
 UPDATE auth 
 SET session_token= ?, password_hash = ?, csrf_token = ?
-WHERE auth_id = ? OR user_id = ?;
+WHERE auth_id = ?;
 
 -- name: DeleteUserAuth :exec
 DELETE FROM auth

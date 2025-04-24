@@ -91,7 +91,6 @@ func login(w http.ResponseWriter, r *http.Request) {
 
 	user, err := getUser(req.Email)
 	if err != nil {
-		log.Println(err)
 		httpErr = http.StatusBadRequest
 		http.Error(w, "Invalid login credentials", httpErr)
 		return
@@ -130,7 +129,12 @@ func login(w http.ResponseWriter, r *http.Request) {
 
 	auth.Session = sessionToken
 	auth.CSRFToken = csrfToken
-	updateAuth(auth)
+
+	if err = updateAuth(auth); err != nil {
+		httpErr := http.StatusInternalServerError
+		http.Error(w, "An error occured", httpErr)
+		return
+	}
 
 	fmt.Fprint(w, "Login Success!")
 }

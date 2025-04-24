@@ -72,12 +72,33 @@ func createUser(request UserCreateRequest, auth Auth) error {
 		Password: auth.PasswordHash,
 	}
 
-	_, err := queries.CreateUser(ctx, params)
+	result, err := queries.CreateUser(ctx, params)
 	if err != nil {
 		return err
 	}
+
+	user_id, err := result.LastInsertId()
+	if err != nil {
+		return err
+	}
+
+	arg := database.CreateAuthParams{
+		UserID: uint16(user_id),
+		PasswordHash: sql.NullString{
+			String: auth.PasswordHash,
+			Valid:  true,
+		},
+	}
+	_, err = queries.CreateAuth(ctx, arg)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
+
+// func CreateUserAuthFromHash() error {
+// }
 
 func getUser(email string) (User, error) {
 	ctx := context.Background()
@@ -128,6 +149,7 @@ func updateAuth(auth Auth) error {
 	queries := database.New(db)
 
 	authParams := database.UpdateUserAuthParams{
+		AuthID: sql.NullInt16{Int16: auth.AuthId, Valid: true},
 		SessionToken: sql.NullString{
 			String: auth.Session,
 			Valid:  true,

@@ -15,11 +15,7 @@ func HashPassword(password string) (string, error) {
 
 func CheckPassword(PasswordHash []byte, password string) bool {
 	err := bcrypt.CompareHashAndPassword(PasswordHash, []byte(password))
-	if err != nil {
-		return false
-	}
-
-	return true
+	return err == nil
 }
 
 func generateToken(length int) string {
