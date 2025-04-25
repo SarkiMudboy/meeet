@@ -106,7 +106,6 @@ func getUser(email string) (User, error) {
 
 	u := User{}
 	user, err := queries.GetUserAuth(ctx, email)
-
 	if err != nil {
 		return u, err
 	}
@@ -169,4 +168,8 @@ func updateAuth(auth Auth) error {
 		return err
 	}
 	return nil
+}
+
+func (a *Auth) Save() error {
+	return updateAuth(*a)
 }

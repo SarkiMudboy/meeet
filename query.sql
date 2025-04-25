@@ -33,9 +33,9 @@ ON a.user_id = u.user_id
 WHERE u.email = ?;
 
 -- name: RetrieveAuth :one
-SELECT a.auth_id, a.password_hash, a.session_token, a.csrf_token
-FROM auth a
-WHERE a.csrf_token = ? AND a.session_token = ?;
+SELECT auth_id, password_hash, session_token, csrf_token
+FROM auth
+WHERE csrf_token = ? AND session_token = ?;
 
 -- name: UpdateUser :execresult
 UPDATE users 

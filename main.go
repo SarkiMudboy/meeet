@@ -142,8 +142,10 @@ func login(w http.ResponseWriter, r *http.Request) {
 func logout(w http.ResponseWriter, r *http.Request) {
 
 	var httpErr int
+	var userAuth Auth
 
-	if err := Authorize(r); err != nil {
+	userAuth, err := Authorize(r)
+	if err != nil {
 		httpErr = http.StatusUnauthorized
 		http.Error(w, "Invalid request", httpErr)
 		return
@@ -163,7 +165,14 @@ func logout(w http.ResponseWriter, r *http.Request) {
 		HttpOnly: true,
 	})
 
-	// clear auth data from user record
+	userAuth.Session = ""
+	userAuth.CSRFToken = ""
+	if err = userAuth.Save(); err != nil {
+		httpErr = http.StatusBadRequest
+		http.Error(w, "Invalid request", httpErr)
+		return
+	}
+
 	fmt.Fprint(w, "Log out successful")
 
 }
@@ -178,7 +187,7 @@ func createMeeting(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := Authorize(r); err != nil {
+	if _, err := Authorize(r); err != nil {
 		httpErr = http.StatusUnauthorized
 		http.Error(w, "Invalid request", httpErr)
 		return

@@ -107,9 +107,9 @@ func (q *Queries) GetAuth(ctx context.Context, email string) (GetAuthRow, error)
 }
 
 const retrieveAuth = `-- name: RetrieveAuth :one
-SELECT a.auth_id, a.password_hash, a.session_token, a.csrf_token
-FROM auth a
-WHERE a.csrf_token = ? AND a.session_token = ?
+SELECT auth_id, password_hash, session_token, csrf_token
+FROM auth
+WHERE csrf_token = ? AND session_token = ?
 `
 
 type RetrieveAuthParams struct {
