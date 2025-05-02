@@ -25,7 +25,7 @@ func (a *application) mount() http.Handler {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 
-	r.Route("v1/auth", func(r chi.Router) {
+	r.Route("/v1/auth", func(r chi.Router) {
 		r.Post("/register", a.healthCheck)
 		r.Post("/login", a.healthCheck)
 		r.Post("/logout", a.healthCheck)
