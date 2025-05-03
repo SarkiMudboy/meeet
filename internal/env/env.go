@@ -1,9 +1,11 @@
 package env
 
 import (
-	"github.com/joho/godotenv"
 	"log"
 	"os"
+	"strconv"
+
+	"github.com/joho/godotenv"
 )
 
 func init() {
@@ -13,11 +15,24 @@ func init() {
 	}
 }
 
-func GetEnv(variable string, fallback string) string {
+func GetString(variable string, fallback string) string {
 	value, ok := os.LookupEnv(variable)
 	if !ok {
 		return fallback
 	}
 
 	return value
+}
+
+func GetInt(variable string, fallback int) int {
+	value, ok := os.LookupEnv(variable)
+	if !ok {
+		return fallback
+	}
+
+	intVal, err := strconv.Atoi(value)
+	if err != nil {
+		return fallback
+	}
+	return intVal
 }

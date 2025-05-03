@@ -3,49 +3,30 @@ package db
 import (
 	"context"
 	"database/sql"
-	"fmt"
-	"log"
-	"os"
 	"time"
 
-	"github.com/SarkiMudboy/meeet/database"
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/golang-migrate/migrate/v4"
-	_ "github.com/golang-migrate/migrate/v4/database/mysql"
-	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
 var db *sql.DB
 var err error
 
-func init() {
-	db, err = sql.Open("mysql", "meeet:2580@/meeet?parseTime=true")
+func New(addr string, maxOpenConn, maxIdleConn int, maxConnLifetime time.Duration) (*sql.DB, error) {
+	db, err = sql.Open("mysql", addr)
 	if err != nil {
-		fmt.Printf("An error occured initializing the database: %s", err.Error())
-		os.Exit(1)
+		return nil, err
 	}
 
-	db.SetConnMaxLifetime(time.Minute * 3)
-	db.SetMaxOpenConns(10)
-	db.SetMaxIdleConns(10)
+	db.SetConnMaxLifetime(maxConnLifetime)
+	db.SetMaxOpenConns(maxOpenConn)
+	db.SetMaxIdleConns(maxIdleConn)
 
-	// migrate any changes
-	runMigrations()
-}
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
+	defer cancel()
 
-func runMigrations() {
-
-	m, err := migrate.New("file://database/migrations", "mysql://meeet:2580@/meeet?")
-
-	if err != nil {
-		log.Printf("An error occured: %s", err.Error())
-		os.Exit(1)
+	if err := db.PingContext(ctx); err != nil {
+		return nil, err
 	}
 
-	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
-		log.Printf("An error occured: %s", err.Error())
-		os.Exit(1)
-	}
-
-	log.Println("Migration Sucessful")
+	return db, nil
 }

@@ -8,12 +8,20 @@ import (
 	"time"
 )
 
+type DBConfig struct {
+	addr            string
+	maxIdleConn     int
+	maxOpenConn     int
+	maxConnLifetime int
+}
+
 type application struct {
 	config config
 }
 
 type config struct {
 	addr string
+	db   DBConfig
 }
 
 func (a *application) mount() http.Handler {
