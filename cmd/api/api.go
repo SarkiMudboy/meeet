@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/SarkiMudboy/meeet/internal/storage"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"log"
@@ -17,6 +18,7 @@ type DBConfig struct {
 
 type application struct {
 	config config
+	store  *storage.Storage
 }
 
 type config struct {

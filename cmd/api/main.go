@@ -6,6 +6,7 @@ import (
 
 	"github.com/SarkiMudboy/meeet/internal/db"
 	"github.com/SarkiMudboy/meeet/internal/env"
+	"github.com/SarkiMudboy/meeet/internal/storage"
 	"github.com/SarkiMudboy/meeet/scripts/schema"
 )
 
@@ -21,21 +22,25 @@ func main() {
 		},
 	}
 
-	app := &application{
-		config: cfg,
-	}
-
 	//db
 	db, err := db.New(
-		app.config.db.addr,
-		app.config.db.maxOpenConn,
-		app.config.db.maxIdleConn,
-		time.Duration(app.config.db.maxConnLifetime),
+		cfg.db.addr,
+		cfg.db.maxOpenConn,
+		cfg.db.maxIdleConn,
+		time.Duration(cfg.db.maxConnLifetime),
 	)
 	if err != nil {
 		log.Panicf("An error occured initializing the database: %s", err.Error())
 	}
+	defer db.Close()
+	log.Println("database connection established")
 	schema.RunMigrations()
+
+	store := storage.NewStore(db)
+	app := &application{
+		config: cfg,
+		store:  store,
+	}
 
 	router := app.mount()
 	log.Fatal(app.run(router))
