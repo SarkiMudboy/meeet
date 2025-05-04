@@ -1,4 +1,4 @@
-package auth
+package utils
 
 import (
 	"crypto/rand"
@@ -18,7 +18,7 @@ func CheckPassword(PasswordHash []byte, password string) bool {
 	return err == nil
 }
 
-func generateToken(length int) string {
+func GenerateToken(length int) string {
 	bytes := make([]byte, length)
 	if _, err := rand.Read(bytes); err != nil {
 		log.Fatalf("An error occured: %s", err.Error())

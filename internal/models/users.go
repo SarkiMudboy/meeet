@@ -1,25 +1,21 @@
-package storage
+package models
 
 import (
 	"context"
 	"database/sql"
-	"github.com/SarkiMudboy/meeet/internal/storage/database"
+	"github.com/SarkiMudboy/meeet/internal/models/database"
 	"log"
 )
 
 type UserRepo interface {
-	checkUserExists(ctx context.Context, email string) bool
-	createUser(ctx context.Context, request UserCreateRequest, auth Auth) error
-	getUser(ctx context.Context, email string) (User, error)
+	CheckUserExists(ctx context.Context, email string) bool
+	CreateUser(ctx context.Context, email string, auth Auth) error
+	GetUser(ctx context.Context, email string) (User, error)
+	GetAuth(ctx context.Context, email string) (Auth, error)
 }
 
 type UserStore struct {
 	db *sql.DB
-}
-
-type UserCreateRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
 }
 
 type User struct {
@@ -27,7 +23,7 @@ type User struct {
 	Auth *Auth
 }
 
-func (u *UserStore) checkUserExists(ctx context.Context, email string) bool {
+func (u *UserStore) CheckUserExists(ctx context.Context, email string) bool {
 
 	queries := database.New(u.db)
 	r, err := queries.CheckUserExists(ctx, email)
@@ -38,12 +34,12 @@ func (u *UserStore) checkUserExists(ctx context.Context, email string) bool {
 	return r
 }
 
-func (u *UserStore) createUser(ctx context.Context, request UserCreateRequest, auth Auth) error {
+func (u *UserStore) CreateUser(ctx context.Context, email string, auth Auth) error {
 
 	queries := database.New(u.db)
 
 	params := database.CreateUserParams{
-		Email:    request.Email,
+		Email:    email,
 		Password: auth.PasswordHash,
 	}
 
@@ -75,7 +71,7 @@ func (u *UserStore) createUser(ctx context.Context, request UserCreateRequest, a
 // func CreateUserAuthFromHash() error {
 // }
 
-func (u *UserStore) getUser(ctx context.Context, email string) (User, error) {
+func (u *UserStore) GetUser(ctx context.Context, email string) (User, error) {
 
 	queries := database.New(u.db)
 	user := User{}
@@ -97,7 +93,7 @@ func (u *UserStore) getUser(ctx context.Context, email string) (User, error) {
 	return user, nil
 }
 
-func (u *UserStore) getAuth(ctx context.Context, email string) (Auth, error) {
+func (u *UserStore) GetAuth(ctx context.Context, email string) (Auth, error) {
 	queries := database.New(u.db)
 	a := Auth{}
 

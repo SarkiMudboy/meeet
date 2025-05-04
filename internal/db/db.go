@@ -17,7 +17,7 @@ func New(addr string, maxOpenConn, maxIdleConn int, maxConnLifetime time.Duratio
 		return nil, err
 	}
 
-	db.SetConnMaxLifetime(maxConnLifetime)
+	db.SetConnMaxLifetime(time.Duration(maxConnLifetime.Seconds()))
 	db.SetMaxOpenConns(maxOpenConn)
 	db.SetMaxIdleConns(maxIdleConn)
 

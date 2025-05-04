@@ -4,7 +4,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/SarkiMudboy/meeet/internal/env"
+	"github.com/SarkiMudboy/meeet/pkg/env"
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/mysql"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
@@ -14,7 +14,7 @@ func RunMigrations() {
 
 	db_addr := env.GetString("SCHEMA_DB_ADDR", "mysql://admin:1234@/admin?")
 
-	m, err := migrate.New("file://cmd/migrate/migrations", db_addr)
+	m, err := migrate.New("file://nternal/db/migrations", db_addr)
 
 	if err != nil {
 		log.Printf("An error occured: %s", err.Error())
