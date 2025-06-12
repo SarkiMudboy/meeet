@@ -3,10 +3,13 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"net/url"
+	"time"
+
 	"github.com/SarkiMudboy/meeet/internal/models"
 	"github.com/SarkiMudboy/meeet/internal/utils"
-	"net/http"
-	"time"
+	"github.com/thedevsaddam/govalidator"
 )
 
 type UserCreateRequest struct {
@@ -17,6 +20,35 @@ type UserCreateRequest struct {
 type LoginRequest struct {
 	Email    string
 	Password string
+}
+
+func raiseValidationError(w http.ResponseWriter, e url.Values) {
+
+	err := map[string]interface{}{"ValidationErr": e}
+	w.Header().Set("Content-type", "application/json")
+	w.WriteHeader(http.StatusBadRequest)
+	json.NewEncoder(w).Encode(err)
+
+}
+
+func validateRegister(r *http.Request) url.Values {
+
+	var requestType UserCreateRequest
+
+	rules := govalidator.MapData{
+		"email":    []string{"required", "min:5", "email"},
+		"password": []string{"required", "min:3", "max:50"},
+	}
+	opts := govalidator.Options{
+		Request:         r,
+		Rules:           rules,
+		RequiredDefault: true,
+		Data:            &requestType,
+	}
+	validator := govalidator.New(opts)
+	e := validator.ValidateJSON()
+
+	return e
 }
 
 func (a *Application) register(w http.ResponseWriter, r *http.Request) {
@@ -36,6 +68,13 @@ func (a *Application) register(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		httpErr = http.StatusInternalServerError
 		http.Error(w, "An error occured", httpErr)
+		return
+	}
+
+	// validate here
+	validationError := validateRegister(r)
+	if len(validationError) > 0 {
+		raiseValidationError(w, validationError)
 		return
 	}
 
@@ -82,7 +121,7 @@ func (a *Application) login(w http.ResponseWriter, r *http.Request) {
 	user, err := a.store.Users.GetUser(ctx, req.Email)
 	if err != nil {
 		httpErr = http.StatusBadRequest
-		http.Error(w, "Invalid login credentials", httpErr)
+		http.Error(w, "Invalid Username/Password", httpErr)
 		return
 	}
 
