@@ -31,7 +31,7 @@ func raiseValidationError(w http.ResponseWriter, e url.Values) {
 
 }
 
-func validateRegister(r *http.Request) url.Values {
+func validateRegister(r *http.Request) (url.Values, *UserCreateRequest) {
 
 	var requestType UserCreateRequest
 
@@ -48,7 +48,7 @@ func validateRegister(r *http.Request) url.Values {
 	validator := govalidator.New(opts)
 	e := validator.ValidateJSON()
 
-	return e
+	return e, &requestType
 }
 
 func (a *Application) register(w http.ResponseWriter, r *http.Request) {
@@ -63,16 +63,10 @@ func (a *Application) register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var req UserCreateRequest
-
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		httpErr = http.StatusInternalServerError
-		http.Error(w, "An error occured", httpErr)
-		return
-	}
+	// var req *UserCreateRequest
 
 	// validate here
-	validationError := validateRegister(r)
+	validationError, req := validateRegister(r)
 	if len(validationError) > 0 {
 		raiseValidationError(w, validationError)
 		return
@@ -207,7 +201,13 @@ func (a *Application) logout(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func (a *Application) createMeeting(w http.ResponseWriter, r *http.Request) {
+// TODO: Read up on how to play with FormData...and files in that GWP book.
+// Add file strorage config as a dependency. Avail opts are Local and AWS S3
+// add field to user model which will include path/url for local/s3
+// add field for username
+// check to see if username exists
+// add an endpoint for providing the default avatars...
+func (a *Application) setProfile(w http.ResponseWriter, r *http.Request) {
 
 	var httpErr int
 
