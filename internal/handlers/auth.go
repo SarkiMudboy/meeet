@@ -63,8 +63,6 @@ func (a *Application) register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// var req *UserCreateRequest
-
 	// validate here
 	validationError, req := validateRegister(r)
 	if len(validationError) > 0 {

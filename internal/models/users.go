@@ -12,6 +12,7 @@ type UserRepo interface {
 	CreateUser(ctx context.Context, email string, auth Auth) error
 	GetUser(ctx context.Context, email string) (User, error)
 	GetAuth(ctx context.Context, email string) (Auth, error)
+	AddProfile(ctx context.Context, userId int, displayName, avatarPath string) error
 }
 
 type UserStore struct {
@@ -91,6 +92,28 @@ func (u *UserStore) GetUser(ctx context.Context, email string) (User, error) {
 	}
 
 	return user, nil
+}
+
+func (u *UserStore) AddProfile(ctx context.Context, userId int, displayName, avatarPath string) error {
+
+	queries := database.New(u.db)
+	addProfileDataParams := database.AddProfileParams{
+		UserID: sql.NullInt16{Int16: int16(userId), Valid: true},
+		DisplayName: sql.NullString{
+			String: displayName,
+			Valid:  true,
+		},
+		AvatarPath: sql.NullString{
+			String: avatarPath,
+			Valid:  true,
+		},
+	}
+
+	_, err := queries.AddProfile(ctx, addProfileDataParams)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (u *UserStore) GetAuth(ctx context.Context, email string) (Auth, error) {

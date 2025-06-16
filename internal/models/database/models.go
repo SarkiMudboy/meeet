@@ -19,8 +19,10 @@ type Auth struct {
 }
 
 type User struct {
-	UserID    sql.NullInt16
-	Email     string
-	Password  string
-	CreatedAt time.Time
+	UserID      sql.NullInt16
+	Email       string
+	DisplayName sql.NullString
+	AvatarPath  sql.NullString
+	Password    string
+	CreatedAt   time.Time
 }

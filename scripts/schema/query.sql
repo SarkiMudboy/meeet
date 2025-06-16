@@ -1,5 +1,5 @@
 -- name: getUser :one
-SELECT user_id, email, password FROM users
+SELECT user_id, email, display_name, avatar_path, password FROM users
 WHERE user_id = ? LIMIT 1;
 
 
@@ -8,7 +8,7 @@ SELECT EXISTS(
   SELECT 1 FROM users WHERE email = ?
 );
 
--- name: getUserAuth :one
+-- name: GetUserAuth :one
 SELECT u.user_id, u.email, u.password, a.password_hash, a.session_token, a.csrf_token
 FROM users u INNER JOIN auth a 
 ON u.user_id = a.user_id
@@ -20,6 +20,12 @@ INSERT INTO users (
 ) VALUES (
   ?, ?
 );
+
+
+-- name: AddProfile :execresult
+UPDATE users 
+SET display_name = ?, avatar_path = ?
+WHERE user_id = ?;
 
 -- name: CreateAuth :execresult
 INSERT INTO auth (

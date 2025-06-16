@@ -19,7 +19,11 @@ func (a *Application) Mount() http.Handler {
 		r.Post("/register", a.register)
 		r.Post("/login", a.login)
 		r.Post("/logout", a.logout)
-		r.Post("/create-meeting", a.createMeeting)
+		// r.Post("/create-meeting", a.createMeeting)
+	})
+
+	r.Route("/v1/profile", func(r chi.Router) {
+		r.Post("/add-profile", a.addProfileInformation)
 	})
 
 	r.Get("/health", healthCheck)

@@ -1,9 +1,9 @@
 version: "2"
 sql:
   - engine: "mysql"
-    queries: "query.sql"
-    schema: "schema.sql"
+    queries: "./scripts/schema/query.sql"
+    schema: "./scripts/schema/schema.sql"
     gen:
       go:
         package: "database"
-        out: "./internal/storage/database"
+        out: "./internal/models/database"

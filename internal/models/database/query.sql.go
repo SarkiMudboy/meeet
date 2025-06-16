@@ -10,6 +10,22 @@ import (
 	"database/sql"
 )
 
+const addProfile = `-- name: AddProfile :execresult
+UPDATE users 
+SET display_name = ?, avatar_path = ?
+WHERE user_id = ?
+`
+
+type AddProfileParams struct {
+	DisplayName sql.NullString
+	AvatarPath  sql.NullString
+	UserID      sql.NullInt16
+}
+
+func (q *Queries) AddProfile(ctx context.Context, arg AddProfileParams) (sql.Result, error) {
+	return q.db.ExecContext(ctx, addProfile, arg.DisplayName, arg.AvatarPath, arg.UserID)
+}
+
 const checkUserExists = `-- name: CheckUserExists :one
 SELECT EXISTS(
   SELECT 1 FROM users WHERE email = ?
@@ -175,20 +191,28 @@ func (q *Queries) UpdateUserAuth(ctx context.Context, arg UpdateUserAuthParams) 
 }
 
 const getUser = `-- name: getUser :one
-SELECT user_id, email, password FROM users
+SELECT user_id, email, display_name, avatar_path, password FROM users
 WHERE user_id = ? LIMIT 1
 `
 
 type getUserRow struct {
-	UserID   sql.NullInt16
-	Email    string
-	Password string
+	UserID      sql.NullInt16
+	Email       string
+	DisplayName sql.NullString
+	AvatarPath  sql.NullString
+	Password    string
 }
 
 func (q *Queries) getUser(ctx context.Context, userID sql.NullInt16) (getUserRow, error) {
 	row := q.db.QueryRowContext(ctx, getUser, userID)
 	var i getUserRow
-	err := row.Scan(&i.UserID, &i.Email, &i.Password)
+	err := row.Scan(
+		&i.UserID,
+		&i.Email,
+		&i.DisplayName,
+		&i.AvatarPath,
+		&i.Password,
+	)
 	return i, err
 }
 
