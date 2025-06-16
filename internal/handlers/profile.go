@@ -64,7 +64,11 @@ func (a *Application) addProfileInformation(w http.ResponseWriter, r *http.Reque
 	// }
 
 	// get the user somehow and UserID; use authorize maybe?
-	// use a goroutine via the storage service from a to save the file..log failure here
+	// go: validate that the name has not been taken...(new query?)
+	// go: use a goroutine via the storage service from a to save the file..log failure here
+	// within the routine above if success -> call the addprofile db func to save the file
+	// use a channel to collect all errors
+	// report errors in response
 
 	http.Error(w, "Invalid Method", httpErr)
 	// return
