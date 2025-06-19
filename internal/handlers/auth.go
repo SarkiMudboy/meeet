@@ -69,7 +69,7 @@ func (a *Application) register(w http.ResponseWriter, r *http.Request) {
 		raiseValidationError(w, validationError)
 		return
 	}
-
+	fmt.Println(req)
 	//check if user exists here
 	if exists := a.store.Users.CheckUserExists(ctx, req.Email); exists {
 		httpErr = http.StatusBadRequest

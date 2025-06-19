@@ -3,8 +3,9 @@ package config
 import "github.com/SarkiMudboy/meeet/pkg/env"
 
 type Config struct {
-	Addr string
-	DB   DBConfig
+	Addr        string
+	DB          DBConfig
+	FileStorage string
 }
 
 func (c *Config) ServerAddr() string {

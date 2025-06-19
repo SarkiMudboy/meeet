@@ -2,6 +2,9 @@ package handlers
 
 import (
 	"fmt"
+	"io"
+	"os"
+
 	// "github.com/SarkiMudboy/meeet/internal/models"
 	"net/http"
 	"net/url"
@@ -12,13 +15,12 @@ import (
 )
 
 type ProfileRequest struct {
-	Name   string
-	Avatar []byte
+	Name   string   `json:"name"`
+	Avatar *os.File `json:"avatar"`
 }
 
-func validateAddProfile(r *http.Request) (url.Values, *ProfileRequest) {
+func validateAddProfile(r *http.Request) url.Values {
 
-	var request ProfileRequest
 	rules := govalidator.MapData{
 		"name":        []string{"min:3", "max:1000", "required"},
 		"file:avatar": []string{"ext:jpg,png", "size:10000", "required"},
@@ -28,12 +30,11 @@ func validateAddProfile(r *http.Request) (url.Values, *ProfileRequest) {
 		Request:         r,
 		Rules:           rules,
 		RequiredDefault: true,
-		// Data:            &request,
 	}
 	validator := govalidator.New(opts)
 	e := validator.Validate()
 
-	return e, &request
+	return e
 }
 
 func (a *Application) addProfileInformation(w http.ResponseWriter, r *http.Request) {
@@ -45,31 +46,39 @@ func (a *Application) addProfileInformation(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	validationErr, profile := validateAddProfile(r)
+	r.ParseMultipartForm(1024 * 5)
+	validationErr := validateAddProfile(r)
 	if len(validationErr) > 0 {
 		raiseValidationError(w, validationErr)
 		return
 	}
-	fmt.Printf("%v", profile)
 
-	// may have to still do this
-	// a.store.Users.AddProfile(r.Context(), userId int, displayName string, avatarPath string)
-	// r.ParseMultipartForm(1024 * 5)
-	// data := r.MultipartForm
-	// displayName := r.PostFormValue("display_name")
-	// fmt.Println(displayName)
-	// file, _, err := r.FormFile("avatar")
-	// if err == nil {
-	// 	fmt.Fprintf(w, "%v", file)
-	// }
+	displayName := r.PostFormValue("display_name")
+
+	fmt.Println(displayName)
+
+	file, header, err := r.FormFile("avatar")
+	if err == nil {
+		fmt.Fprintf(w, "%T\n", file)
+	}
+
+	defer file.Close()
+
+	diskFile, err := os.Create(header.Filename)
+	if err != nil {
+		http.Error(w, "Server Error", http.StatusBadRequest)
+		return
+	}
+
+	if _, err := io.Copy(diskFile, file); err != nil {
+		http.Error(w, "Server Error", http.StatusInternalServerError)
+		return
+	}
 
 	// get the user somehow and UserID; use authorize maybe?
-	// go: validate that the name has not been taken...(new query?)
-	// go: use a goroutine via the storage service from a to save the file..log failure here
-	// within the routine above if success -> call the addprofile db func to save the file
-	// use a channel to collect all errors
-	// report errors in response
-
-	http.Error(w, "Invalid Method", httpErr)
-	// return
+	// validate that the name has not been taken...(new query?)
+	// storage service from a to save the file..log failure here
+	// path, err := a.storage.Save(diskFile)
+	// a.store.Users.AddProfile(r.Context(), userId int, displayName string, avatarPath string)
+	fmt.Fprint(w, "Success! Profile created!")
 }

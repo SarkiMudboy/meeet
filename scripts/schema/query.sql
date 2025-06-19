@@ -1,11 +1,11 @@
--- name: getUser :one
+-- name: GetUser :one
 SELECT user_id, email, display_name, avatar_path, password FROM users
 WHERE user_id = ? LIMIT 1;
 
 
 -- name: CheckUserExists :one
 SELECT EXISTS(
-  SELECT 1 FROM users WHERE email = ?
+  SELECT user_id FROM users WHERE email = ?
 );
 
 -- name: GetUserAuth :one
