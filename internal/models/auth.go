@@ -7,6 +7,7 @@ import (
 )
 
 type Auth struct {
+	UserId       int16  `json:"user_id"`
 	AuthId       int16  `json:"auth_id"`
 	Session      string `json:"session"`
 	PasswordHash string `json:"passwod_hash"`
@@ -34,7 +35,7 @@ func (a *AuthStore) RetrieveAuth(ctx context.Context, csrfToken, sessionToken st
 	if err != nil {
 		return auth, err
 	}
-
+	auth.UserId = int16(record.UserID)
 	auth.AuthId = record.AuthID.Int16
 	auth.Session = record.SessionToken.String
 	auth.PasswordHash = record.PasswordHash.String

@@ -28,12 +28,17 @@ func (q *Queries) AddProfile(ctx context.Context, arg AddProfileParams) (sql.Res
 
 const checkUserExists = `-- name: CheckUserExists :one
 SELECT EXISTS(
-  SELECT user_id FROM users WHERE email = ?
+  SELECT user_id FROM users WHERE email = ? OR display_name = ?
 )
 `
 
-func (q *Queries) CheckUserExists(ctx context.Context, email string) (bool, error) {
-	row := q.db.QueryRowContext(ctx, checkUserExists, email)
+type CheckUserExistsParams struct {
+	Email       string
+	DisplayName sql.NullString
+}
+
+func (q *Queries) CheckUserExists(ctx context.Context, arg CheckUserExistsParams) (bool, error) {
+	row := q.db.QueryRowContext(ctx, checkUserExists, arg.Email, arg.DisplayName)
 	var exists bool
 	err := row.Scan(&exists)
 	return exists, err
@@ -97,13 +102,14 @@ func (q *Queries) DeleteUserAuth(ctx context.Context, arg DeleteUserAuthParams) 
 }
 
 const getAuth = `-- name: GetAuth :one
-SELECT a.auth_id, a.password_hash, a.session_token, a.csrf_token
+SELECT a.user_id, a.auth_id, a.password_hash, a.session_token, a.csrf_token
 FROM auth a INNER JOIN users u
 ON a.user_id = u.user_id
 WHERE u.email = ?
 `
 
 type GetAuthRow struct {
+	UserID       uint16
 	AuthID       sql.NullInt16
 	PasswordHash sql.NullString
 	SessionToken sql.NullString
@@ -114,10 +120,37 @@ func (q *Queries) GetAuth(ctx context.Context, email string) (GetAuthRow, error)
 	row := q.db.QueryRowContext(ctx, getAuth, email)
 	var i GetAuthRow
 	err := row.Scan(
+		&i.UserID,
 		&i.AuthID,
 		&i.PasswordHash,
 		&i.SessionToken,
 		&i.CsrfToken,
+	)
+	return i, err
+}
+
+const getUser = `-- name: GetUser :one
+SELECT user_id, email, display_name, avatar_path, password FROM users
+WHERE user_id = ? LIMIT 1
+`
+
+type GetUserRow struct {
+	UserID      sql.NullInt16
+	Email       string
+	DisplayName sql.NullString
+	AvatarPath  sql.NullString
+	Password    string
+}
+
+func (q *Queries) GetUser(ctx context.Context, userID sql.NullInt16) (GetUserRow, error) {
+	row := q.db.QueryRowContext(ctx, getUser, userID)
+	var i GetUserRow
+	err := row.Scan(
+		&i.UserID,
+		&i.Email,
+		&i.DisplayName,
+		&i.AvatarPath,
+		&i.Password,
 	)
 	return i, err
 }
@@ -153,7 +186,7 @@ func (q *Queries) GetUserAuth(ctx context.Context, email string) (GetUserAuthRow
 }
 
 const retrieveAuth = `-- name: RetrieveAuth :one
-SELECT auth_id, password_hash, session_token, csrf_token
+SELECT user_id, auth_id, password_hash, session_token, csrf_token
 FROM auth
 WHERE csrf_token = ? AND session_token = ?
 `
@@ -164,6 +197,7 @@ type RetrieveAuthParams struct {
 }
 
 type RetrieveAuthRow struct {
+	UserID       uint16
 	AuthID       sql.NullInt16
 	PasswordHash sql.NullString
 	SessionToken sql.NullString
@@ -174,6 +208,7 @@ func (q *Queries) RetrieveAuth(ctx context.Context, arg RetrieveAuthParams) (Ret
 	row := q.db.QueryRowContext(ctx, retrieveAuth, arg.CsrfToken, arg.SessionToken)
 	var i RetrieveAuthRow
 	err := row.Scan(
+		&i.UserID,
 		&i.AuthID,
 		&i.PasswordHash,
 		&i.SessionToken,
@@ -218,30 +253,4 @@ func (q *Queries) UpdateUserAuth(ctx context.Context, arg UpdateUserAuthParams) 
 		arg.CsrfToken,
 		arg.AuthID,
 	)
-}
-
-const getUser = `-- name: getUser :one
-SELECT user_id, email, display_name, avatar_path, password FROM users
-WHERE user_id = ? LIMIT 1
-`
-
-type getUserRow struct {
-	UserID      sql.NullInt16
-	Email       string
-	DisplayName sql.NullString
-	AvatarPath  sql.NullString
-	Password    string
-}
-
-func (q *Queries) GetUser(ctx context.Context, userID sql.NullInt16) (getUserRow, error) {
-	row := q.db.QueryRowContext(ctx, getUser, userID)
-	var i getUserRow
-	err := row.Scan(
-		&i.UserID,
-		&i.Email,
-		&i.DisplayName,
-		&i.AvatarPath,
-		&i.Password,
-	)
-	return i, err
 }

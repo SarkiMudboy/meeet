@@ -5,7 +5,7 @@ WHERE user_id = ? LIMIT 1;
 
 -- name: CheckUserExists :one
 SELECT EXISTS(
-  SELECT user_id FROM users WHERE email = ?
+  SELECT user_id FROM users WHERE email = ? OR display_name = ?
 );
 
 -- name: GetUserAuth :one
@@ -33,13 +33,13 @@ INSERT INTO auth (
 ) VALUES ( ?, ? );
 
 -- name: GetAuth :one
-SELECT a.auth_id, a.password_hash, a.session_token, a.csrf_token
+SELECT a.user_id, a.auth_id, a.password_hash, a.session_token, a.csrf_token
 FROM auth a INNER JOIN users u
 ON a.user_id = u.user_id
 WHERE u.email = ?;
 
 -- name: RetrieveAuth :one
-SELECT auth_id, password_hash, session_token, csrf_token
+SELECT user_id, auth_id, password_hash, session_token, csrf_token
 FROM auth
 WHERE csrf_token = ? AND session_token = ?;
 

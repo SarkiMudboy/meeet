@@ -5,7 +5,7 @@ import "github.com/SarkiMudboy/meeet/pkg/env"
 type Config struct {
 	Addr        string
 	DB          DBConfig
-	FileStorage string
+	FileStorage map[string]*ObjectStorage
 }
 
 func (c *Config) ServerAddr() string {

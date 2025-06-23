@@ -8,7 +8,7 @@ import (
 )
 
 type UserRepo interface {
-	CheckUserExists(ctx context.Context, email string) bool
+	CheckUserExists(ctx context.Context, email, displayName string) bool
 	CreateUser(ctx context.Context, email string, auth Auth) error
 	GetUser(ctx context.Context, email string) (User, error)
 	GetAuth(ctx context.Context, email string) (Auth, error)
@@ -24,10 +24,11 @@ type User struct {
 	Auth *Auth
 }
 
-func (u *UserStore) CheckUserExists(ctx context.Context, email string) bool {
+func (u *UserStore) CheckUserExists(ctx context.Context, email, displayName string) bool {
 
 	queries := database.New(u.db)
-	r, err := queries.CheckUserExists(ctx, email)
+	params := database.CheckUserExistsParams{Email: email, DisplayName: sql.NullString{String: displayName}}
+	r, err := queries.CheckUserExists(ctx, params)
 	if err != nil {
 		log.Printf("An error occured: %s", err.Error())
 		return false
