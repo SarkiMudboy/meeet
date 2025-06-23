@@ -23,7 +23,7 @@ func (a *Application) Mount() http.Handler {
 	})
 
 	r.Route("/v1/profile", func(r chi.Router) {
-		r.Post("/add-profile", a.addProfileInformation)
+		r.Post("/create-profile", a.addProfileInformation)
 	})
 
 	r.Get("/health", healthCheck)

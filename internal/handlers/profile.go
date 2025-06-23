@@ -2,8 +2,8 @@ package handlers
 
 import (
 	"fmt"
-	"io"
 	"os"
+	"path"
 
 	// "github.com/SarkiMudboy/meeet/internal/models"
 	"net/http"
@@ -22,8 +22,8 @@ type ProfileRequest struct {
 func validateAddProfile(r *http.Request) url.Values {
 
 	rules := govalidator.MapData{
-		"name":        []string{"min:3", "max:1000", "required"},
-		"file:avatar": []string{"ext:jpg,png", "size:10000", "required"},
+		"display_name": []string{"min:3", "max:1000", "required"},
+		"file:avatar":  []string{"ext:jpg,png", "size:10000", "required"},
 	}
 
 	opts := govalidator.Options{
@@ -69,28 +69,31 @@ func (a *Application) addProfileInformation(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	// get avatar
 	file, header, err := r.FormFile("avatar")
-	if err == nil {
+	if err != nil {
 		fmt.Fprintf(w, "%T\n", file)
 	}
 
 	defer file.Close()
 
+	// create dest file
 	diskFile, err := os.Create(header.Filename)
 	if err != nil {
 		http.Error(w, "Server error", http.StatusInternalServerError)
 		return
 	}
 
-	if _, err := io.Copy(diskFile, file); err != nil {
-		http.Error(w, "Server Error", http.StatusInternalServerError)
+	// Save to disk
+	fileName := fmt.Sprintf("%s%s", displayName, path.Ext(header.Filename))
+	path, err := a.object.Save(fileName, "avatars/", diskFile)
+
+	if err != nil {
+		httpErr = http.StatusInternalServerError
+		http.Error(w, "Server error", httpErr)
 		return
 	}
 
-	// get the user somehow and UserID; use authorize maybe?
-	// validate that the name has not been taken...(new query?)
-	// storage service from a to save the file..log failure here
-	path, err := a.storage.Save(diskFile)
 	err = a.store.Users.AddProfile(r.Context(), int(userAuth.UserId), displayName, path)
 	if err != nil {
 		http.Error(w, "Bad Request", http.StatusBadRequest) // wrap error here

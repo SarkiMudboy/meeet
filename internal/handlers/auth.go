@@ -69,9 +69,9 @@ func (a *Application) register(w http.ResponseWriter, r *http.Request) {
 		raiseValidationError(w, validationError)
 		return
 	}
-	fmt.Println(req)
+	// fmt.Println(req)
 	//check if user exists here
-	if exists := a.store.Users.CheckUserExists(ctx, req.Email); exists {
+	if exists := a.store.Users.CheckUserExists(ctx, req.Email, ""); exists {
 		httpErr = http.StatusBadRequest
 		http.Error(w, "A user with that email already exists", httpErr)
 		return
@@ -130,6 +130,7 @@ func (a *Application) login(w http.ResponseWriter, r *http.Request) {
 		Name:     "session_token",
 		Value:    sessionToken,
 		Expires:  time.Now().Add(time.Duration(time.Hour * 24)),
+		Path:     "/",
 		HttpOnly: true,
 	})
 
@@ -137,6 +138,7 @@ func (a *Application) login(w http.ResponseWriter, r *http.Request) {
 		Name:     "csrf_token",
 		Value:    csrfToken,
 		Expires:  time.Now().Add(time.Duration(time.Hour * 24)),
+		Path:     "/",
 		HttpOnly: false,
 	})
 
@@ -177,6 +179,7 @@ func (a *Application) logout(w http.ResponseWriter, r *http.Request) {
 		Name:     "session_token",
 		Value:    "",
 		Expires:  time.Now().Add(-time.Hour),
+		Path:     "/",
 		HttpOnly: true,
 	})
 
@@ -184,6 +187,7 @@ func (a *Application) logout(w http.ResponseWriter, r *http.Request) {
 		Name:     "csrf_token",
 		Value:    "",
 		Expires:  time.Now().Add(-time.Hour),
+		Path:     "/",
 		HttpOnly: true,
 	})
 

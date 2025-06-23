@@ -2,8 +2,10 @@ package handlers
 
 import (
 	"errors"
-	"github.com/SarkiMudboy/meeet/internal/models"
+	"fmt"
 	"net/http"
+
+	"github.com/SarkiMudboy/meeet/internal/models"
 )
 
 var ErrUnauthuorized = errors.New("Unauthorized")
@@ -16,13 +18,13 @@ func (a *Application) Authorize(r *http.Request) (models.Auth, error) {
 	}
 
 	csrfToken := r.Header.Get("X-CSRF-Token")
-
 	if csrfToken == "" {
 		return models.Auth{}, ErrUnauthuorized
 	}
 
 	auth, err := a.store.Auth.RetrieveAuth(r.Context(), csrfToken, session.Value)
 	if err != nil {
+		fmt.Println(err)
 		return models.Auth{}, ErrUnauthuorized
 	}
 

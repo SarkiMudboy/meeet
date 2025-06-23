@@ -1,10 +1,12 @@
 package handlers
 
 import (
-	"github.com/SarkiMudboy/meeet/internal/models"
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/SarkiMudboy/meeet/internal/models"
+	"github.com/SarkiMudboy/meeet/internal/storage"
 )
 
 type config interface {
@@ -14,12 +16,14 @@ type config interface {
 type Application struct {
 	config config
 	store  *models.Storage
+	object storage.ObjectStorage
 }
 
-func NewApp(cfg config, store *models.Storage) *Application {
+func NewApp(cfg config, store *models.Storage, fileStorage storage.ObjectStorage) *Application {
 	return &Application{
 		config: cfg,
 		store:  store,
+		object: fileStorage,
 	}
 }
 

@@ -7,6 +7,7 @@ import (
 	"github.com/SarkiMudboy/meeet/internal/db"
 	"github.com/SarkiMudboy/meeet/internal/handlers"
 	"github.com/SarkiMudboy/meeet/internal/models"
+	"github.com/SarkiMudboy/meeet/internal/storage"
 	"github.com/SarkiMudboy/meeet/scripts/schema"
 )
 
@@ -31,7 +32,8 @@ func main() {
 	schema.RunMigrations()
 
 	store := models.NewStore(db)
-	app := handlers.NewApp(&cfg, store)
+	objStorage := storage.NewLocalStorage(cfg.Storage.GetRoot())
+	app := handlers.NewApp(&cfg, store, objStorage)
 	router := app.Mount()
 	log.Fatal(app.Run(router))
 }
