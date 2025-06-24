@@ -86,7 +86,7 @@ func (a *Application) addProfileInformation(w http.ResponseWriter, r *http.Reque
 
 	// Save to disk
 	fileName := fmt.Sprintf("%s%s", displayName, path.Ext(header.Filename))
-	path, err := a.object.Save(fileName, "avatars/", diskFile)
+	path, err := a.object.Save(fileName, "avatars", diskFile)
 
 	if err != nil {
 		httpErr = http.StatusInternalServerError

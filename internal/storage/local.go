@@ -28,9 +28,13 @@ func (l *LocalStorage) Save(name, path string, file *os.File) (fullPath string, 
 	cwd, _ := os.Getwd()
 	fullPath = filepath.Join(cwd, l.root, path, name)
 
-	diskFile, err := os.Create(path)
+	if _, seekErr := file.Seek(0, io.SeekStart); seekErr != nil {
+		err = seekErr
+		return
+	}
+
+	diskFile, err := os.Create(fullPath)
 	if err != nil {
-		fmt.Printf("%s\n%s\n", fullPath, err)
 		return
 	}
 
